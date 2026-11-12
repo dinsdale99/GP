@@ -1,0 +1,26 @@
+---
+// Mobile-only bar: Call / WhatsApp / Quote. data-track names feed analytics (see BaseLayout).
+import { business } from '../data/business';
+const waText = encodeURIComponent(`Hi ${business.name}, I'd like a quote.`);
+---
+<nav class="sticky-cta" aria-label="Contact us">
+  <a href={`tel:${business.phoneE164}`} data-track="click_call">Call</a>
+  <a href={`https://wa.me/${business.whatsapp}?text=${waText}`} data-track="click_whatsapp" rel="noopener">WhatsApp</a>
+  <a href="/contact/" class="quote" data-track="click_quote">Get a quote</a>
+</nav>
+
+<style>
+  .sticky-cta {
+    position: fixed; inset: auto 0 0 0; z-index: 50;
+    display: grid; grid-template-columns: 1fr 1fr 1.3fr;
+    background: var(--color-brand-strong);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  a {
+    min-height: var(--tap); display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 600; text-decoration: none;
+  }
+  a + a { border-left: 1px solid rgb(255 255 255 / 0.15); }
+  .quote { background: var(--color-accent); color: var(--color-accent-ink); }
+  @media (min-width: 768px) { .sticky-cta { display: none; } }
+</style>

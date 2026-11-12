@@ -1,0 +1,96 @@
+---
+// Garden area from rectangles, triangles and circles, in square metres and square feet.
+---
+<div class="calc-box" data-area-calc>
+  <h3>Garden area calculator</h3>
+  <div class="calc-fields top">
+    <label>Measuring in
+      <select name="unit">
+        <option value="m" selected>metres</option>
+        <option value="ft">feet</option>
+      </select>
+    </label>
+  </div>
+  <div class="shapes"></div>
+  <button type="button" data-add>Add another shape</button>
+  <dl class="calc-result" aria-live="polite">
+    <div><dt>square metres</dt><dd data-out="m2">0</dd></div>
+    <div><dt>square feet</dt><dd data-out="ft2">0</dd></div>
+    <div><dt>square yards</dt><dd data-out="yd2">0</dd></div>
+  </dl>
+  <p class="calc-note">Split an awkward garden into simple shapes and add them up. To leave out a patio or shed, add it as a shape and tick "subtract".</p>
+
+  <template>
+    <div class="shape">
+      <label>Shape
+        <select name="kind">
+          <option value="rect">Rectangle</option>
+          <option value="tri">Triangle</option>
+          <option value="circle">Circle</option>
+        </select>
+      </label>
+      <label data-a>Length<input type="number" name="a" min="0" step="0.1" inputmode="decimal" /></label>
+      <label data-b>Width<input type="number" name="b" min="0" step="0.1" inputmode="decimal" /></label>
+      <label class="sub"><input type="checkbox" name="subtract" /> Subtract</label>
+      <button type="button" data-remove aria-label="Remove shape">Remove</button>
+    </div>
+  </template>
+</div>
+
+<style>
+  .top { margin-bottom: var(--space-4); max-width: 14rem; }
+  .shapes { display: grid; gap: var(--space-3); margin-bottom: var(--space-4); }
+  .shape { display: grid; grid-template-columns: 1.2fr 1fr 1fr auto auto; gap: var(--space-3); align-items: end; }
+  .sub { display: flex !important; align-items: center; gap: var(--space-2); min-height: var(--tap); }
+  .sub input { width: 20px; height: 20px; min-height: 0; }
+  @media (max-width: 640px) { .shape { grid-template-columns: 1fr 1fr; } }
+</style>
+
+<script>
+  for (const box of document.querySelectorAll<HTMLElement>('[data-area-calc]')) {
+    const list = box.querySelector<HTMLElement>('.shapes')!;
+    const tpl = box.querySelector('template')!;
+    const unit = box.querySelector<HTMLSelectElement>('[name="unit"]')!;
+    const fmt = (n: number) => n.toLocaleString('en-GB', { maximumFractionDigits: 1 });
+
+    const labels = (row: HTMLElement) => {
+      const kind = row.querySelector<HTMLSelectElement>('[name="kind"]')!.value;
+      const [a, b] = [row.querySelector('[data-a]')!, row.querySelector<HTMLElement>('[data-b]')!];
+      a.firstChild!.textContent = kind === 'circle' ? 'Diameter' : kind === 'tri' ? 'Base' : 'Length';
+      b.firstChild!.textContent = kind === 'tri' ? 'Height' : 'Width';
+      b.hidden = kind === 'circle';
+    };
+
+    const calc = () => {
+      let total = 0;
+      for (const row of list.querySelectorAll<HTMLElement>('.shape')) {
+        const kind = row.querySelector<HTMLSelectElement>('[name="kind"]')!.value;
+        const a = Number(row.querySelector<HTMLInputElement>('[name="a"]')!.value) || 0;
+        const b = Number(row.querySelector<HTMLInputElement>('[name="b"]')!.value) || 0;
+        const area = kind === 'rect' ? a * b : kind === 'tri' ? (a * b) / 2 : Math.PI * (a / 2) ** 2;
+        total += row.querySelector<HTMLInputElement>('[name="subtract"]')!.checked ? -area : area;
+      }
+      total = Math.max(0, total);
+      const m2 = unit.value === 'ft' ? total * 0.09290304 : total;
+      box.querySelector('[data-out="m2"]')!.textContent = fmt(m2);
+      box.querySelector('[data-out="ft2"]')!.textContent = fmt(m2 * 10.7639);
+      box.querySelector('[data-out="yd2"]')!.textContent = fmt(m2 * 1.19599);
+    };
+
+    const add = (a = '', b = '') => {
+      const row = tpl.content.firstElementChild!.cloneNode(true) as HTMLElement;
+      row.querySelector<HTMLInputElement>('[name="a"]')!.value = a;
+      row.querySelector<HTMLInputElement>('[name="b"]')!.value = b;
+      row.querySelector('[data-remove]')!.addEventListener('click', () => { row.remove(); calc(); });
+      row.querySelector('[name="kind"]')!.addEventListener('change', () => labels(row));
+      list.append(row);
+      labels(row);
+    };
+
+    box.querySelector('[data-add]')!.addEventListener('click', () => add());
+    box.addEventListener('input', calc);
+    box.addEventListener('change', calc);
+    add('10', '6');
+    calc();
+  }
+</script>

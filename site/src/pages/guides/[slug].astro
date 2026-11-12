@@ -1,0 +1,98 @@
+---
+// Every guide uses this template: direct answer first, then the body, FAQs and a link to the matching service.
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FAQ from '../../components/FAQ.astro';
+import QuoteBand from '../../components/QuoteBand.astro';
+import { business, serviceBySlug } from '../../data/business';
+
+export async function getStaticPaths() {
+  const guides = await getCollection('guides', (g) => !g.data.draft);
+  return guides.map((guide) => ({ params: { slug: guide.id }, props: { guide, guides } }));
+}
+
+const { guide, guides } = Astro.props;
+const { data } = guide;
+const { Content } = await render(guide);
+const related = data.services.map((s) => serviceBySlug(s)!).filter(Boolean);
+const more = guides.filter((g) => g.id !== guide.id).slice(0, 3);
+const date = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: data.title,
+  description: data.description,
+  datePublished: data.published.toISOString(),
+  dateModified: data.updated.toISOString(),
+  author: { '@type': 'Organization', name: business.name, url: business.url },
+  publisher: { '@id': `${business.url}/#business` },
+};
+---
+<BaseLayout title={data.title} description={data.description}>
+  <script type="application/ld+json" set:html={JSON.stringify(schema)} slot="head" />
+  <article class="container guide">
+    <nav class="crumbs" aria-label="Breadcrumb"><a href="/guides/">Guides</a><span aria-hidden="true">/</span><span>{data.title}</span></nav>
+    <h1>{data.title}</h1>
+    <p class="byline">Reviewed by {data.reviewedBy}. Updated {date(data.updated)}.</p>
+
+    <div class="answer">
+      <p class="answer-label">Short answer</p>
+      <p>{data.answer}</p>
+    </div>
+
+    <div class="body prose">
+      <Content />
+    </div>
+
+    <FAQ faqs={data.faqs} />
+
+    {related.length > 0 && (
+      <aside class="service">
+        <p>Need it done for you?</p>
+        <div>{related.map((s) => <a href={s.path} class="btn btn-outline">{s.title}</a>)}</div>
+      </aside>
+    )}
+  </article>
+
+  {more.length > 0 && (
+    <section class="container more">
+      <h2>More guides</h2>
+      <div class="more-grid">
+        {more.map((g) => <a href={`/guides/${g.id}/`}><h3>{g.data.title}</h3><p>{g.data.description}</p></a>)}
+      </div>
+    </section>
+  )}
+
+  <QuoteBand />
+</BaseLayout>
+
+<style>
+  .guide { padding: var(--space-12) 0 var(--space-12); max-width: 48rem; margin-inline: auto; }
+  .crumbs { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-bottom: var(--space-6); font-size: var(--text-sm); color: var(--color-ink-muted); }
+  .crumbs a { font-weight: 600; }
+  .byline { color: var(--color-ink-muted); font-size: var(--text-sm); }
+  .answer { margin: var(--space-8) 0; padding: var(--space-6); background: var(--color-surface); border-top: 4px solid var(--color-accent); border-radius: var(--radius); }
+  .answer-label { font-weight: 800; margin-bottom: var(--space-2); }
+  .answer p:last-child { margin: 0; font-size: var(--text-lg); line-height: 1.55; }
+  .body { max-width: none; }
+  .body :global(h2) { margin-top: var(--space-12); font-size: var(--text-xl); }
+  .body :global(h3) { margin-top: var(--space-8); font-size: var(--text-lg); }
+  .body :global(ul), .body :global(ol) { padding-left: 1.25rem; }
+  .body :global(li) { margin-bottom: var(--space-2); }
+  .body :global(table) { width: 100%; border-collapse: collapse; margin: var(--space-6) 0; font-size: var(--text-sm); }
+  .body :global(th), .body :global(td) { text-align: left; padding: var(--space-3); border-bottom: 1px solid var(--color-border); vertical-align: top; }
+  .body :global(th) { border-bottom: 2px solid var(--color-ink); }
+  .guide :global(.faq) { margin-top: var(--space-12); }
+  .service { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; margin-top: var(--space-12); padding-top: var(--space-6); border-top: 1px solid var(--color-border); }
+  .service p { margin: 0; font-weight: 800; font-stretch: 75%; font-size: var(--text-xl); }
+  .service div { display: flex; gap: var(--space-3); flex-wrap: wrap; }
+  .more { padding-bottom: var(--space-16); }
+  .more-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-6); }
+  .more-grid a { display: block; padding: var(--space-6); background: var(--color-surface); border-top: 4px solid var(--color-ink); border-radius: var(--radius); text-decoration: none; }
+  .more-grid a:hover { border-top-color: var(--color-accent); }
+  .more-grid h3 { font-size: var(--text-lg); margin-bottom: var(--space-2); }
+  .more-grid p { margin: 0; color: var(--color-ink-muted); font-size: var(--text-sm); }
+  @media (max-width: 899px) { .more-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 559px) { .body :global(table) { display: block; overflow-x: auto; } }
+</style>

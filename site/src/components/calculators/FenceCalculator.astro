@@ -1,0 +1,43 @@
+---
+// Panels, posts, gravel boards and post mix for a panel fence.
+---
+<div class="calc-box" data-fence-calc>
+  <h3>Fence materials calculator</h3>
+  <div class="calc-fields">
+    <label>Total fence length (metres)<input type="number" name="length" min="0" step="0.1" value="20" inputmode="decimal" /></label>
+    <label>Panel width
+      <select name="width">
+        <option value="1.83" selected>6 ft (1.83 m), the standard size</option>
+        <option value="1.5">5 ft (1.5 m)</option>
+        <option value="1.2">4 ft (1.2 m)</option>
+      </select>
+    </label>
+    <label>Separate runs<input type="number" name="runs" min="1" step="1" value="1" inputmode="numeric" /></label>
+  </div>
+  <dl class="calc-result" aria-live="polite">
+    <div><dt>panels</dt><dd data-out="panels">0</dd></div>
+    <div><dt>posts</dt><dd data-out="posts">0</dd></div>
+    <div><dt>gravel boards</dt><dd data-out="boards">0</dd></div>
+    <div><dt>bags of post mix (approx.)</dt><dd data-out="mix">0</dd></div>
+  </dl>
+  <p class="calc-note">A run is a straight or cornered line of fence with two ends. Each separate run needs one extra end post. Post mix is estimated at 2 bags per post.</p>
+</div>
+
+<script>
+  for (const box of document.querySelectorAll<HTMLElement>('[data-fence-calc]')) {
+    const num = (n: string) => Math.max(0, Number(box.querySelector<HTMLInputElement>(`[name="${n}"]`)!.value) || 0);
+    const out = (k: string, v: number) => (box.querySelector(`[data-out="${k}"]`)!.textContent = String(v));
+    const calc = () => {
+      const length = num('length');
+      const runs = Math.max(1, Math.round(num('runs')));
+      const panels = length > 0 ? Math.ceil(length / num('width')) : 0;
+      const posts = panels > 0 ? panels + runs : 0;
+      out('panels', panels);
+      out('posts', posts);
+      out('boards', panels);
+      out('mix', posts * 2);
+    };
+    box.addEventListener('input', calc);
+    calc();
+  }
+</script>

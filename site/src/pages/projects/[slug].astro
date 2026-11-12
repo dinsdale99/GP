@@ -1,0 +1,85 @@
+---
+import { getCollection, render } from 'astro:content';
+import { Image, getImage } from 'astro:assets';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import BeforeAfter from '../../components/BeforeAfter.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import QuoteBand from '../../components/QuoteBand.astro';
+import { business, serviceBySlug } from '../../data/business';
+
+export async function getStaticPaths() {
+  const projects = await getCollection('projects', (p) => !p.data.draft);
+  return projects.map((project) => ({ params: { slug: project.id }, props: { project, projects } }));
+}
+
+const { project, projects } = Astro.props;
+const { data } = project;
+const { Content } = await render(project);
+const jobServices = data.services.map((s) => serviceBySlug(s)!);
+const related = projects
+  .filter((p) => p.id !== project.id && p.data.services.some((s) => data.services.includes(s)))
+  .slice(0, 3);
+const hasBody = project.body?.trim() && !project.body.includes('What the customer needed');
+const cover = data.pairs[0]?.after ?? data.gallery[0]?.src;
+const og = cover ? await getImage({ src: cover, width: 1200, height: 630, fit: 'cover', format: 'jpg' }) : undefined;
+---
+<BaseLayout
+  title={data.town ? `${data.title} in ${data.town}` : data.title}
+  description={data.summary}
+  image={og?.src}
+>
+  <article class="container job">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="/projects/">Our work</a>
+      <span aria-hidden="true">/</span>
+      <span>{data.title}</span>
+    </nav>
+    <h1>{data.title}</h1>
+    <p class="meta">
+      {jobServices.map((s, i) => <>{i > 0 && ', '}<a href={s.path}>{s.label}</a></>)}
+      {data.town && ` in ${data.town}`}
+    </p>
+    <p class="summary">{data.summary}</p>
+
+    {data.pairs.map((pair) => (
+      <BeforeAfter before={pair.before} after={pair.after} focus={pair.focus} label={pair.caption ?? data.title} sizes="(min-width: 1216px) 1216px, 100vw" class="pair" />
+    ))}
+
+    {data.gallery.length > 0 && (
+      <div class="gallery">
+        {data.gallery.map((g) => (
+          <Image src={g.src} alt={g.alt} widths={[480, 800, 1200]} sizes="(min-width: 900px) 50vw, 100vw" />
+        ))}
+      </div>
+    )}
+
+    {hasBody && <div class="prose body"><Content /></div>}
+  </article>
+
+  {related.length > 0 && (
+    <section class="container related">
+      <h2>Similar jobs</h2>
+      <div class="grid">{related.map((p) => <ProjectCard project={p} />)}</div>
+    </section>
+  )}
+
+  <QuoteBand
+    heading="Need something similar doing?"
+    whatsappText={`Hi ${business.name}, I'd like a quote for something similar to "${data.title}".`}
+  />
+</BaseLayout>
+
+<style>
+  .job { padding: var(--space-12) 0 var(--space-16); }
+  .crumbs { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-bottom: var(--space-6); color: var(--color-ink-muted); font-size: var(--text-sm); }
+  .crumbs a { font-weight: 600; }
+  .meta { color: var(--color-ink-muted); font-weight: 600; }
+  .summary { max-width: var(--prose-width); font-size: var(--text-lg); line-height: 1.5; margin-bottom: var(--space-8); }
+  .job :global(.pair) { aspect-ratio: 4 / 3; max-height: 80svh; width: 100%; border-radius: var(--radius); margin-bottom: var(--space-6); }
+  .gallery { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+  .gallery :global(img) { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--radius); }
+  .body { margin-top: var(--space-8); }
+  .related { padding-bottom: var(--space-16); }
+  .grid { display: grid; gap: var(--space-6); grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 767px) { .gallery, .grid { grid-template-columns: 1fr; } }
+</style>

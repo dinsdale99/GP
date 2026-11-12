@@ -1,0 +1,66 @@
+---
+// Drag (or arrow-key) comparison of a before/after pair. Without JS it shows a 50/50 split.
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+interface Props {
+  before: ImageMetadata;
+  after: ImageMetadata;
+  label: string; // what the job is, used in alt text
+  eager?: boolean;
+  sizes?: string;
+  focus?: string; // CSS object-position shared by both photos so the pair lines up
+  class?: string;
+}
+
+const { before, after, label, eager = false, sizes = '100vw', focus = '50% 50%', class: className } = Astro.props;
+const loading = eager ? 'eager' : 'lazy';
+const widths = [480, 800, 1200, 1600];
+---
+<figure class:list={['ba', className]} data-ba style={`--pos: 50%; --focus: ${focus}`}>
+  <Image src={after} alt={`After: ${label}`} widths={widths} sizes={sizes} loading={loading} fetchpriority={eager ? 'high' : 'auto'} class="ba-img" />
+  <div class="ba-before">
+    <Image src={before} alt={`Before: ${label}`} widths={widths} sizes={sizes} loading={loading} class="ba-img" />
+  </div>
+  <span class="tag tag-before" aria-hidden="true">Before</span>
+  <span class="tag tag-after" aria-hidden="true">After</span>
+  <div class="handle" aria-hidden="true"><span></span></div>
+  <input type="range" min="0" max="100" value="50" aria-label={`Compare before and after: ${label}`} />
+</figure>
+
+<style>
+  .ba { position: relative; margin: 0; overflow: hidden; background: var(--color-surface); touch-action: pan-y; }
+  .ba :global(.ba-img) { width: 100%; height: 100%; object-fit: cover; object-position: var(--focus); }
+  .ba-before { position: absolute; inset: 0; clip-path: inset(0 calc(100% - var(--pos)) 0 0); }
+  .tag {
+    position: absolute; top: var(--space-3); padding: 0.15rem 0.6rem;
+    background: rgb(10 10 10 / 0.78); color: #fff; font-size: var(--text-sm); font-weight: 600; border-radius: var(--radius);
+  }
+  .tag-before { left: var(--space-3); }
+  .tag-after { right: var(--space-3); }
+  .handle { position: absolute; top: 0; bottom: 0; left: var(--pos); width: 3px; margin-left: -1.5px; background: #fff; pointer-events: none; }
+  .handle span {
+    position: absolute; top: 50%; left: 50%; width: 44px; height: 44px; translate: -50% -50%;
+    border-radius: 50%; background: var(--color-accent); border: 3px solid #fff;
+  }
+  .handle span::before, .handle span::after {
+    content: ''; position: absolute; top: 50%; width: 0; height: 0; translate: 0 -50%;
+    border: 6px solid transparent;
+  }
+  .handle span::before { left: 5px; border-right-color: #fff; }
+  .handle span::after { right: 5px; border-left-color: #fff; }
+  input {
+    position: absolute; inset: 0; width: 100%; height: 100%; margin: 0;
+    opacity: 0; cursor: ew-resize;
+  }
+  input:focus-visible ~ .handle span, .ba:has(input:focus-visible) .handle span { outline: 3px solid var(--color-accent); outline-offset: 3px; }
+</style>
+
+<script>
+  for (const el of document.querySelectorAll<HTMLElement>('[data-ba]')) {
+    const input = el.querySelector('input')!;
+    const set = () => el.style.setProperty('--pos', `${input.value}%`);
+    input.addEventListener('input', set);
+    set();
+  }
+</script>

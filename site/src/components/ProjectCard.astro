@@ -1,0 +1,47 @@
+---
+// A job in a grid: the after photo, with the before photo inset in the corner when there is one.
+import { Image } from 'astro:assets';
+import type { CollectionEntry } from 'astro:content';
+import { services } from '../data/business';
+
+interface Props { project: CollectionEntry<'projects'> }
+
+const { data, id } = Astro.props.project;
+const pair = data.pairs[0];
+const main = pair?.after ?? data.gallery[0]?.src;
+const mainAlt = pair ? `After: ${data.title}` : (data.gallery[0]?.alt ?? data.title);
+const serviceLabels = data.services.map((s) => services.find((x) => x.slug === s)?.label).filter(Boolean);
+---
+<a href={`/projects/${id}/`} class="card">
+  <div class="media">
+    {main && <Image src={main} alt={mainAlt} widths={[400, 700, 1000]} sizes="(min-width: 900px) 33vw, (min-width: 600px) 50vw, 100vw" class="main" />}
+    {pair && (
+      <div class="inset">
+        <Image src={pair.before} alt={`Before: ${data.title}`} width={240} class="inset-img" />
+        <span>Before</span>
+      </div>
+    )}
+  </div>
+  <h3>{data.title}</h3>
+  <p class="services">{serviceLabels.join(', ')}{data.town && ` in ${data.town}`}</p>
+</a>
+
+<style>
+  .card { display: block; text-decoration: none; color: inherit; }
+  .media { position: relative; aspect-ratio: 4 / 3; overflow: hidden; border-radius: var(--radius); background: var(--color-surface); }
+  .media :global(.main) { width: 100%; height: 100%; object-fit: cover; transition: scale 400ms ease; }
+  .card:hover .media :global(.main) { scale: 1.03; }
+  .inset {
+    position: absolute; left: var(--space-3); bottom: var(--space-3); width: 34%;
+    border: 3px solid #fff; border-radius: var(--radius); overflow: hidden; background: #fff;
+  }
+  .inset :global(.inset-img) { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+  .inset span {
+    position: absolute; left: 0; bottom: 0; padding: 0 0.4rem;
+    background: rgb(10 10 10 / 0.78); color: #fff; font-size: 0.75rem; font-weight: 600;
+  }
+  h3 { margin: var(--space-3) 0 var(--space-1); font-size: var(--text-lg); }
+  .card:hover h3 { text-decoration: underline; text-decoration-color: var(--color-accent); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+  .services { margin: 0; color: var(--color-ink-muted); font-size: var(--text-sm); }
+  @media (prefers-reduced-motion: reduce) { .media :global(.main) { transition: none; } }
+</style>

@@ -1,0 +1,75 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import QuoteBand from '../../components/QuoteBand.astro';
+import { business, services } from '../../data/business';
+
+// Jobs with a before/after pair first, then the rest
+const projects = (await getCollection('projects', (p) => !p.data.draft)).sort(
+  (a, b) => Number(b.data.pairs.length > 0) - Number(a.data.pairs.length > 0),
+);
+const filters = services
+  .map((s) => ({ ...s, count: projects.filter((p) => p.data.services.includes(s.slug)).length }))
+  .filter((s) => s.count > 0);
+---
+<BaseLayout
+  title={`Our Work: Tree Surgery, Fencing and Clearance Jobs in ${business.region}`}
+  description={`Before and after photos of ${projects.length} recent tree surgery, garden fencing, tree protection and site clearance jobs by ${business.name}.`}
+>
+  <section class="container head">
+    <h1>Our work</h1>
+    <p class="lede">Before and after photos from recent jobs across {business.region}. Pick a service to narrow it down.</p>
+    <div class="filters" role="group" aria-label="Filter jobs by service">
+      <button type="button" data-filter="" aria-pressed="true">All jobs <span>{projects.length}</span></button>
+      {filters.map((f) => (
+        <button type="button" data-filter={f.slug} aria-pressed="false">{f.label} <span>{f.count}</span></button>
+      ))}
+    </div>
+  </section>
+
+  <section class="container">
+    <div class="grid">
+      {projects.map((p) => (
+        <div data-services={p.data.services.join(' ')}>
+          <ProjectCard project={p} />
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <QuoteBand heading="Got a similar job?" />
+</BaseLayout>
+
+<style>
+  .head { padding: var(--space-12) 0 var(--space-8); }
+  .lede { color: var(--color-ink-muted); font-size: var(--text-lg); max-width: 40rem; }
+  .filters { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-6); }
+  .filters button {
+    font: inherit; font-weight: 600; cursor: pointer;
+    min-height: 44px; padding: 0 var(--space-4);
+    border: 2px solid var(--color-border); border-radius: 999px; background: #fff; color: var(--color-ink);
+  }
+  .filters button span { color: var(--color-ink-muted); font-weight: 400; margin-left: var(--space-1); }
+  .filters button[aria-pressed='true'] { background: var(--color-ink); border-color: var(--color-ink); color: #fff; }
+  .filters button[aria-pressed='true'] span { color: var(--color-on-dark-muted); }
+  .grid { display: grid; gap: var(--space-12) var(--space-6); grid-template-columns: repeat(3, 1fr); padding-bottom: var(--space-16); }
+  .grid [hidden] { display: none; }
+  @media (max-width: 899px) { .grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 559px) { .grid { grid-template-columns: 1fr; } }
+</style>
+
+<script>
+  const buttons = [...document.querySelectorAll<HTMLButtonElement>('[data-filter]')];
+  const items = [...document.querySelectorAll<HTMLElement>('[data-services]')];
+  const apply = (filter: string) => {
+    for (const b of buttons) b.setAttribute('aria-pressed', String(b.dataset.filter === filter));
+    for (const i of items) i.hidden = Boolean(filter) && !i.dataset.services!.split(' ').includes(filter);
+    const url = new URL(location.href);
+    if (filter) url.searchParams.set('service', filter); else url.searchParams.delete('service');
+    history.replaceState(null, '', url);
+  };
+  for (const b of buttons) b.addEventListener('click', () => apply(b.dataset.filter!));
+  const initial = new URLSearchParams(location.search).get('service');
+  if (initial && buttons.some((b) => b.dataset.filter === initial)) apply(initial);
+</script>

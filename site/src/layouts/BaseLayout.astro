@@ -1,0 +1,207 @@
+---
+import '../styles/global.css';
+import { Image } from 'astro:assets';
+import { business, services, whatsappLink } from '../data/business';
+import logo from '../assets/brand/logo.jpg';
+import StickyCTA from '../components/StickyCTA.astro';
+import LocalBusinessSchema from '../components/LocalBusinessSchema.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  image?: string; // Open Graph image path
+  noindex?: boolean;
+}
+
+const { title, description, image = '/og-default.jpg', noindex = false } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? business.url);
+const fullTitle = title.includes(business.name) ? title : `${title} | ${business.name}`;
+const path = Astro.url.pathname;
+
+const nav = [
+  { href: '/tree-surgery/', label: 'Tree surgery' },
+  { href: '/garden-fencing/', label: 'Fencing' },
+  { href: '/commercial/', label: 'Construction sites' },
+  { href: '/projects/', label: 'Our work' },
+  { href: '/guides/', label: 'Guides' },
+];
+const current = (href: string) => path.startsWith(href) ? 'page' : undefined;
+---
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex" />}
+    <link rel="icon" type="image/png" sizes="64x64" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#0a0a0a" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_GB" />
+    <meta property="og:site_name" content={business.name} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={new URL(image, canonical)} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <LocalBusinessSchema />
+    <slot name="head" />
+  </head>
+  <body>
+    <a href="#main" class="skip">Skip to content</a>
+    <header class="site-header">
+      <div class="container bar">
+        <a href="/" class="brand">
+          <Image src={logo} alt="" width={96} height={96} class="badge" loading="eager" />
+          <span>{business.name}</span>
+        </a>
+        <nav class="nav" aria-label="Main">
+          {nav.map((n) => <a href={n.href} aria-current={current(n.href)}>{n.label}</a>)}
+        </nav>
+        <div class="actions">
+          <a href={whatsappLink()} class="btn btn-outline" data-track="click_whatsapp" rel="noopener">WhatsApp</a>
+          <a href={`tel:${business.phoneE164}`} class="btn btn-accent" data-track="click_call">{business.phone}</a>
+        </div>
+        <details class="menu">
+          <summary aria-label="Menu"><span></span></summary>
+          <nav aria-label="Mobile">
+            {nav.map((n) => <a href={n.href} aria-current={current(n.href)}>{n.label}</a>)}
+            <a href="/contact/">Get a quote</a>
+          </nav>
+        </details>
+      </div>
+    </header>
+
+    <main id="main">
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-top">
+          <a href="/" class="footer-brand">
+            <Image src={logo} alt={`${business.name} logo`} width={128} height={128} class="badge badge-lg" />
+            <span>{business.name}</span>
+          </a>
+          <p>Tree surgery, fencing, tree protection and site clearance across {business.region}.</p>
+          <div class="footer-ctas">
+            <a href={whatsappLink()} class="btn btn-accent" data-track="click_whatsapp" rel="noopener">WhatsApp us</a>
+            <a href="/contact/" class="btn btn-outline">Get a quote</a>
+          </div>
+        </div>
+        <div class="footer-cols">
+          <div>
+            <h2>Home and garden</h2>
+            <ul>{services.filter((s) => s.audience === 'residential').map((s) => <li><a href={s.path}>{s.label}</a></li>)}</ul>
+          </div>
+          <div>
+            <h2>Construction sites</h2>
+            <ul>
+              <li><a href="/commercial/">For contractors</a></li>
+              {services.filter((s) => s.audience === 'commercial').map((s) => <li><a href={s.path}>{s.label}</a></li>)}
+            </ul>
+          </div>
+          <div>
+            <h2>Useful</h2>
+            <ul>
+              <li><a href="/projects/">Our work</a></li>
+              <li><a href="/guides/">Guides and calculators</a></li>
+              <li><a href="/contact/">Contact and quotes</a></li>
+            </ul>
+          </div>
+          <div>
+            <h2>Get in touch</h2>
+            <ul>
+              <li><a href={`tel:${business.phoneE164}`} data-track="click_call">{business.phone}</a></li>
+              <li><a href={`mailto:${business.email}`} data-track="click_email">{business.email}</a></li>
+              {business.social.facebook && <li><a href={business.social.facebook} rel="noopener">Facebook</a></li>}
+              {business.social.instagram && <li><a href={business.social.instagram} rel="noopener">Instagram</a></li>}
+            </ul>
+          </div>
+        </div>
+        <p class="areas">Working across {business.areasServed.join(', ')} and the towns in between.</p>
+        <p class="legal">&copy; {new Date().getFullYear()} {business.legalName}</p>
+      </div>
+    </footer>
+
+    <StickyCTA />
+
+    <script>
+      // Sends any click on a [data-track] element to GA4/GTM once a consented tag is loaded.
+      document.addEventListener('click', (e) => {
+        const el = (e.target as HTMLElement).closest<HTMLElement>('[data-track]');
+        if (!el) return;
+        const w = window as unknown as { dataLayer?: object[] };
+        w.dataLayer?.push({ event: el.dataset.track, link_url: el.getAttribute('href'), page: location.pathname });
+      });
+    </script>
+  </body>
+</html>
+
+<style>
+  .skip { position: absolute; left: -999px; top: 0; z-index: 100; padding: var(--space-3) var(--space-4); background: #fff; color: var(--color-ink); }
+  .skip:focus { left: var(--space-4); }
+
+  .site-header { background: var(--color-brand); color: #fff; position: sticky; top: 0; z-index: 40; }
+  .bar { display: flex; align-items: center; gap: var(--space-6); min-height: 72px; }
+  .brand { display: flex; align-items: center; gap: var(--space-3); text-decoration: none; font-weight: 800; font-stretch: 80%; font-size: var(--text-lg); white-space: nowrap; }
+  .badge { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; scale: 1.08; clip-path: circle(46%); }
+  .nav { display: flex; gap: var(--space-6); margin-left: auto; }
+  .nav a { text-decoration: none; color: var(--color-on-dark-muted); font-weight: 600; white-space: nowrap; }
+  .nav a:hover, .nav a[aria-current] { color: #fff; }
+  .nav a[aria-current] { box-shadow: inset 0 -3px 0 var(--color-accent); }
+  .actions { display: flex; gap: var(--space-3); }
+
+  .menu { display: none; margin-left: auto; }
+  .menu summary { list-style: none; cursor: pointer; width: var(--tap); height: var(--tap); display: grid; place-items: center; }
+  .menu summary::-webkit-details-marker { display: none; }
+  .menu summary span, .menu summary span::before, .menu summary span::after {
+    display: block; width: 24px; height: 2px; background: #fff; position: relative; transition: transform 200ms;
+  }
+  .menu summary span::before, .menu summary span::after { content: ''; position: absolute; }
+  .menu summary span::before { top: -7px; }
+  .menu summary span::after { top: 7px; }
+  .menu[open] summary span { background: transparent; }
+  .menu[open] summary span::before { transform: translateY(7px) rotate(45deg); }
+  .menu[open] summary span::after { transform: translateY(-7px) rotate(-45deg); }
+  .menu nav {
+    position: absolute; left: 0; right: 0; top: 100%;
+    display: grid; background: var(--color-brand); border-top: 1px solid #2c2e2c; padding: var(--space-2) 0 var(--space-4);
+  }
+  .menu nav a { padding: var(--space-3) var(--space-4); text-decoration: none; font-weight: 700; font-size: var(--text-lg); }
+  .menu nav a[aria-current] { color: var(--color-accent); }
+
+  .site-footer { background: var(--color-brand); color: var(--color-on-dark-muted); padding: var(--space-16) 0 var(--space-8); }
+  .site-footer a { color: #fff; }
+  .footer-top { display: grid; grid-template-columns: auto 1fr auto; gap: var(--space-8); align-items: center; padding-bottom: var(--space-12); border-bottom: 1px solid #2c2e2c; }
+  .footer-brand { display: flex; align-items: center; gap: var(--space-4); text-decoration: none; font-weight: 800; font-stretch: 75%; font-size: var(--text-2xl); line-height: 1; }
+  .badge-lg { width: 72px; height: 72px; }
+  .footer-top p { margin: 0; max-width: 28rem; }
+  .footer-ctas { display: flex; gap: var(--space-3); }
+  .footer-cols { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-8); padding: var(--space-12) 0; }
+  .footer-cols h2 { font-size: var(--text-lg); color: #fff; margin-bottom: var(--space-3); }
+  .footer-cols ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
+  .footer-cols a { text-decoration: none; color: var(--color-on-dark-muted); }
+  .footer-cols a:hover { color: #fff; text-decoration: underline; }
+  .areas { border-top: 1px solid #2c2e2c; padding-top: var(--space-6); }
+  .legal { font-size: var(--text-sm); margin: 0; }
+
+  @media (max-width: 1100px) { .nav { display: none; } .actions { margin-left: auto; } .menu { display: block; margin-left: 0; } }
+  @media (max-width: 899px) {
+    .footer-top { grid-template-columns: 1fr; }
+    .footer-cols { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 767px) {
+    .actions { display: none; }
+    .menu { margin-left: auto; }
+    .bar { min-height: 60px; }
+    .site-footer { padding-bottom: calc(var(--space-8) + var(--tap)); }
+  }
+</style>

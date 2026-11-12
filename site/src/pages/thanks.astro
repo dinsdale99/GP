@@ -1,0 +1,20 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { business, whatsappLink } from '../data/business';
+---
+<BaseLayout title="Quote request sent" description={`Your quote request has been sent to ${business.name}.`} noindex>
+  <section class="container page">
+    <h1>Quote request sent</h1>
+    <p class="lede">Thanks. We'll look at your photos and get back to you with a price. If it's urgent, call us on <a href={`tel:${business.phoneE164}`} data-track="click_call">{business.phone}</a>.</p>
+    <div class="actions">
+      <a href="/projects/" class="btn btn-outline">See our recent work</a>
+      <a href={whatsappLink()} class="btn btn-accent" data-track="click_whatsapp" rel="noopener">Send more photos on WhatsApp</a>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .page { padding: var(--space-24) 0; max-width: 44rem; }
+  .lede { font-size: var(--text-lg); color: var(--color-ink-muted); }
+  .actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-6); }
+</style>

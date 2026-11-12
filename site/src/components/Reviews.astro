@@ -1,0 +1,45 @@
+---
+// Customer reviews from src/content/reviews.json. Renders nothing until there are reviews.
+import { getCollection } from 'astro:content';
+import { business } from '../data/business';
+
+interface Props { service?: string; limit?: number }
+const { service, limit = 3 } = Astro.props;
+
+const all = (await getCollection('reviews')).map((r) => r.data).sort((a, b) => +b.date - +a.date);
+const matching = service ? all.filter((r) => r.services.includes(service as never)) : all;
+const shown = (matching.length ? matching : all).slice(0, limit);
+const average = all.length ? all.reduce((s, r) => s + r.rating, 0) / all.length : 0;
+const sourceLabel = { google: 'Google', facebook: 'Facebook', checkatrade: 'Checkatrade', direct: 'Customer' } as const;
+---
+{shown.length > 0 && (
+  <section class="reviews container">
+    <div class="head">
+      <h2>What customers say</h2>
+      <p class="score"><strong>{average.toFixed(1)}</strong> out of 5 from {all.length} reviews</p>
+    </div>
+    <div class="grid">
+      {shown.map((r) => (
+        <figure>
+          <p class="stars" aria-label={`${r.rating} out of 5`}>{'★'.repeat(r.rating)}</p>
+          <blockquote>{r.text}</blockquote>
+          <figcaption>{r.author}, {sourceLabel[r.source]} review</figcaption>
+        </figure>
+      ))}
+    </div>
+    {business.googleReviewUrl && <a href={business.googleReviewUrl} rel="noopener" class="more">Read all our Google reviews</a>}
+  </section>
+)}
+
+<style>
+  .reviews { padding: var(--space-16) 0; }
+  .head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: var(--space-4); }
+  .score strong { font-size: var(--text-2xl); font-stretch: 75%; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-8); margin-top: var(--space-6); }
+  figure { margin: 0; padding-top: var(--space-4); border-top: 3px solid var(--color-ink); }
+  .stars { color: var(--color-accent); letter-spacing: 0.1em; margin-bottom: var(--space-2); }
+  blockquote { margin: 0 0 var(--space-4); font-size: var(--text-lg); line-height: 1.5; }
+  figcaption { color: var(--color-ink-muted); font-size: var(--text-sm); }
+  .more { display: inline-block; margin-top: var(--space-8); font-weight: 700; }
+  @media (max-width: 899px) { .grid { grid-template-columns: 1fr; } }
+</style>

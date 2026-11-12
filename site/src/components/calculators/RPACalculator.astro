@@ -1,0 +1,46 @@
+---
+// Root protection area to BS 5837:2012 (section 4.6): radius = 12 x stem diameter, capped at 707 m2.
+---
+<div class="calc-box" data-rpa-calc>
+  <h3>Root protection area calculator</h3>
+  <div class="calc-fields">
+    <label>Stem diameter(s) in mm, measured at 1.5 m<input type="text" name="stems" value="450" inputmode="decimal" aria-describedby="rpa-help" /></label>
+  </div>
+  <p class="calc-note" id="rpa-help">For a multi-stemmed tree, enter each stem separated by commas, e.g. 300, 250, 200.</p>
+  <dl class="calc-result" aria-live="polite">
+    <div><dt>stem diameter used (mm)</dt><dd data-out="d">0</dd></div>
+    <div><dt>RPA radius (m)</dt><dd data-out="r">0</dd></div>
+    <div><dt>RPA area (m²)</dt><dd data-out="area">0</dd></div>
+    <div><dt>side of an equal square (m)</dt><dd data-out="side">0</dd></div>
+  </dl>
+  <p class="calc-note" data-out="note"></p>
+</div>
+
+<script>
+  const CAP = 707; // m2, BS 5837:2012 maximum RPA (about a 15 m radius)
+  for (const box of document.querySelectorAll<HTMLElement>('[data-rpa-calc]')) {
+    const input = box.querySelector<HTMLInputElement>('[name="stems"]')!;
+    const out = (k: string, v: string) => (box.querySelector(`[data-out="${k}"]`)!.textContent = v);
+    const fmt = (n: number, d = 1) => n.toLocaleString('en-GB', { maximumFractionDigits: d });
+    const calc = () => {
+      const stems = input.value.split(/[,\s]+/).map(Number).filter((n) => n > 0);
+      if (!stems.length) { for (const k of ['d', 'r', 'area', 'side']) out(k, '0'); out('note', ''); return; }
+      let d: number;
+      let method: string;
+      if (stems.length === 1) { d = stems[0]; method = 'Single stem.'; }
+      else if (stems.length <= 5) { d = Math.sqrt(stems.reduce((s, x) => s + x * x, 0)); method = '2 to 5 stems: combined diameter = square root of the sum of each stem diameter squared.'; }
+      else { const mean = stems.reduce((s, x) => s + x, 0) / stems.length; d = Math.sqrt(mean * mean * stems.length); method = 'More than 5 stems: combined diameter = square root of (mean stem diameter squared x number of stems).'; }
+      let area = Math.PI * (12 * d / 1000) ** 2;
+      const capped = area > CAP;
+      if (capped) area = CAP;
+      const r = Math.sqrt(area / Math.PI);
+      out('d', fmt(d, 0));
+      out('r', fmt(r, 2));
+      out('area', fmt(area));
+      out('side', fmt(Math.sqrt(area), 2));
+      out('note', `${method}${capped ? ' Capped at the 707 m² maximum.' : ''} Always use the RPA shown on your tree protection plan where there is one.`);
+    };
+    input.addEventListener('input', calc);
+    calc();
+  }
+</script>

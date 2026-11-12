@@ -1,0 +1,53 @@
+---
+title: Root protection area (RPA) calculator to BS 5837
+description: Calculate a tree's root protection area from stem diameter, including multi-stemmed trees, using the BS 5837:2012 method.
+answer: Under BS 5837:2012, a tree's root protection area is a circle with a radius of 12 times the stem diameter, measured 1.5 m above ground. A tree with a 450 mm stem has an RPA radius of 5.4 m and an area of about 91.6 m². The area is capped at 707 m², which is a radius of about 15 m. Multi-stemmed trees use a combined stem diameter.
+category: commercial
+services: [tree-protection-fencing, site-clearance]
+published: 2026-11-06
+updated: 2026-11-06
+reviewedBy: GP Site Services
+faqs:
+  - q: Where do you measure stem diameter?
+    a: At 1.5 m above ground level. Trees on a slope are measured on the upslope side, and there are separate rules for trees that fork or swell at that height, set out in BS 5837:2012.
+  - q: Does the RPA have to be a circle?
+    a: No. The standard treats it as a circle by default, but an arboriculturist can change its shape to reflect where roots are likely to be, as long as the area stays the same. Always follow the tree protection plan.
+  - q: What happens inside the RPA during construction?
+    a: It is fenced off and kept free of machinery, storage, level changes and excavation, unless the arboricultural method statement allows specific work, usually with ground protection.
+---
+import RPACalculator from '../../components/calculators/RPACalculator.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+<RPACalculator />
+
+## The formula
+
+| Tree | Stem diameter to use |
+|---|---|
+| Single stem | The stem diameter at 1.5 m |
+| 2 to 5 stems | √(stem 1² + stem 2² + … ) |
+| More than 5 stems | √(mean stem diameter² × number of stems) |
+
+Then:
+
+- **RPA radius** = 12 × stem diameter (convert millimetres to metres first)
+- **RPA area** = 3.142 × radius²
+- The area is capped at **707 m²**
+
+## Worked example
+
+A twin-stemmed sycamore with stems of 300 mm and 400 mm:
+
+1. Combined diameter = √(300² + 400²) = √250,000 = **500 mm**
+2. Radius = 12 × 0.5 m = **6 m**
+3. Area = 3.142 × 6² = **113.1 m²**
+
+<Callout type="law" title="Use the plan, not the calculator">
+  On a development site, the root protection areas that count are the ones on your tree protection plan, drawn by the project arboriculturist and approved through planning. Use this calculator for early estimates and checking, not instead of the plan.
+</Callout>
+
+## Fencing the RPA
+
+The protective fence goes on the line of the RPA, or wherever the tree protection plan shows it. The default specification in BS 5837:2012 is welded mesh panels fixed to a braced scaffold framework, so it can't be moved or pushed over during the job. Where site access has to cross an RPA, ground protection is used instead of fencing in that area.
+
+[See our tree protection fencing service](/commercial/tree-protection-fencing/)

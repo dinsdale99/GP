@@ -1,0 +1,105 @@
+---
+// Quote request with photo upload. Posts to business.quoteFormAction once hosting/form service is chosen.
+import { business, services, whatsappLink } from '../data/business';
+
+interface Props { service?: string }
+const { service } = Astro.props;
+const connected = Boolean(business.quoteFormAction);
+---
+<form
+  class="quote-form"
+  method="post"
+  action={business.quoteFormAction || '/thanks/'}
+  enctype="multipart/form-data"
+  data-connected={connected ? 'true' : 'false'}
+>
+  <div class="row">
+    <label>
+      <span>Your name</span>
+      <input name="name" autocomplete="name" required />
+    </label>
+    <label>
+      <span>Phone</span>
+      <input name="phone" type="tel" autocomplete="tel" required />
+    </label>
+  </div>
+  <div class="row">
+    <label>
+      <span>Email <em>(optional)</em></span>
+      <input name="email" type="email" autocomplete="email" />
+    </label>
+    <label>
+      <span>Postcode</span>
+      <input name="postcode" autocomplete="postal-code" required />
+    </label>
+  </div>
+  <label>
+    <span>What do you need?</span>
+    <select name="service" required>
+      <option value="">Choose a service</option>
+      {services.map((s) => <option value={s.slug} selected={s.slug === service}>{s.label}</option>)}
+      <option value="other">Something else</option>
+    </select>
+  </label>
+  <label>
+    <span>Tell us about the job</span>
+    <textarea name="message" rows="4" placeholder="For example: 20 metres of closeboard fence to replace, or a large sycamore over the drive"></textarea>
+  </label>
+  <label class="file">
+    <span>Photos <em>(optional, up to 5)</em></span>
+    <input name="photos" type="file" accept="image/*" multiple />
+  </label>
+  <input type="text" name="company_website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
+  <div class="submit">
+    <button type="submit" class="btn btn-accent" data-track="submit_quote">Send quote request</button>
+    <p>Rather message? <a href={whatsappLink()} data-track="click_whatsapp" rel="noopener">WhatsApp us your photos</a></p>
+  </div>
+  <p class="status" role="status" hidden></p>
+</form>
+
+<style>
+  .quote-form { display: grid; gap: var(--space-4); }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+  label { display: grid; gap: var(--space-1); font-weight: 600; }
+  label em { font-style: normal; font-weight: 400; color: var(--color-ink-muted); }
+  input, select, textarea {
+    font: inherit; font-weight: 400; color: var(--color-ink);
+    min-height: var(--tap); padding: var(--space-2) var(--space-3);
+    border: 2px solid var(--color-border); border-radius: var(--radius); background: #fff;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--color-ink); outline: none; }
+  .file input { padding: var(--space-3); border-style: dashed; }
+  .hp { position: absolute; left: -9999px; }
+  .submit { display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; margin-top: var(--space-2); }
+  .submit p { margin: 0; color: var(--color-ink-muted); }
+  .status { margin: 0; padding: var(--space-3) var(--space-4); background: var(--color-surface); border-left: 4px solid var(--color-accent); }
+  @media (max-width: 559px) { .row { grid-template-columns: 1fr; } }
+</style>
+
+<script>
+  // Preselect the service from ?service= (links from service pages).
+  const wanted = new URLSearchParams(location.search).get('service');
+  if (wanted) {
+    for (const select of document.querySelectorAll<HTMLSelectElement>('.quote-form select[name="service"]')) {
+      if ([...select.options].some((o) => o.value === wanted)) select.value = wanted;
+    }
+  }
+
+  // Until a form service is connected, don't pretend the request was sent.
+  for (const form of document.querySelectorAll<HTMLFormElement>('.quote-form[data-connected="false"]')) {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const status = form.querySelector<HTMLElement>('.status')!;
+      status.hidden = false;
+      status.textContent = 'The form is not connected yet. Please call or WhatsApp us for now.';
+    });
+  }
+  for (const input of document.querySelectorAll<HTMLInputElement>('.quote-form input[type="file"]')) {
+    input.addEventListener('change', () => {
+      if (input.files && input.files.length > 5) {
+        input.setCustomValidity('Please choose up to 5 photos.');
+        input.reportValidity();
+      } else input.setCustomValidity('');
+    });
+  }
+</script>

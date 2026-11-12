@@ -1,0 +1,6 @@
+# Browser test screenshots and logs
+.playwright-mcp/
+
+# OS / editor
+.DS_Store
+Thumbs.db

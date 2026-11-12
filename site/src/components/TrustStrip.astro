@@ -1,0 +1,24 @@
+---
+// Real figures and accreditations. Renders nothing until business.ts has them.
+import { business } from '../data/business';
+const { trust, accreditations } = business;
+---
+{(trust.length > 0 || accreditations.length > 0) && (
+  <section class="trust">
+    <div class="container inner">
+      {trust.map((t) => (
+        <p><strong>{t.value}</strong> {t.label}</p>
+      ))}
+      {accreditations.map((a) => (
+        <p><strong>{a.name}</strong> {a.meaning}</p>
+      ))}
+    </div>
+  </section>
+)}
+
+<style>
+  .trust { background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+  .inner { display: flex; flex-wrap: wrap; gap: var(--space-4) var(--space-12); padding: var(--space-6) 0; }
+  p { margin: 0; color: var(--color-ink-muted); }
+  strong { display: block; color: var(--color-ink); font-stretch: 75%; font-size: var(--text-xl); line-height: 1.1; }
+</style>

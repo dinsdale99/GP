@@ -1,0 +1,17 @@
+---
+// Highlighted note inside a guide. "law" for legal points, "tip" for practical advice.
+interface Props { type?: 'tip' | 'law' | 'warning'; title?: string }
+const { type = 'tip', title } = Astro.props;
+const defaults = { tip: 'Tip', law: 'The rules', warning: 'Be careful' };
+---
+<aside class:list={['callout', type]}>
+  <p class="title">{title ?? defaults[type]}</p>
+  <slot />
+</aside>
+
+<style>
+  .callout { margin: var(--space-8) 0; padding: var(--space-4) var(--space-6); background: var(--color-surface); border-left: 6px solid var(--color-ink); border-radius: 0 var(--radius) var(--radius) 0; }
+  .callout.law, .callout.warning { border-left-color: var(--color-accent); }
+  .title { font-weight: 800; margin-bottom: var(--space-2); }
+  .callout :global(p:last-child) { margin-bottom: 0; }
+</style>

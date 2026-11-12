@@ -1,0 +1,23 @@
+---
+// LocalBusiness structured data, built from business.ts. Service-area business, so no street address.
+import { business } from '../data/business';
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'HomeAndConstructionBusiness',
+  '@id': `${business.url}/#business`,
+  name: business.name,
+  url: business.url,
+  telephone: business.phoneE164,
+  email: business.email,
+  areaServed: business.areasServed.map((name) => ({ '@type': 'City', name })),
+  openingHoursSpecification: business.hours.map((h) => ({
+    '@type': 'OpeningHoursSpecification',
+    dayOfWeek: h.days,
+    opens: h.opens,
+    closes: h.closes,
+  })),
+  sameAs: Object.values(business.social).filter(Boolean),
+};
+---
+<script type="application/ld+json" set:html={JSON.stringify(schema)} />

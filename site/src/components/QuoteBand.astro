@@ -1,0 +1,35 @@
+---
+// Closing call to action used at the end of most pages.
+import { business, whatsappLink } from '../data/business';
+
+interface Props { heading?: string; text?: string; whatsappText?: string }
+const {
+  heading = 'Send us a photo of the job',
+  text = "WhatsApp is quickest. Tell us your postcode and what you'd like doing.",
+  whatsappText,
+} = Astro.props;
+---
+<section class="band">
+  <div class="container inner">
+    <div>
+      <h2>{heading}</h2>
+      <p>{text}</p>
+    </div>
+    <div class="actions">
+      <a href={whatsappLink(whatsappText)} class="btn btn-white" data-track="click_whatsapp" rel="noopener">WhatsApp us</a>
+      <a href={`tel:${business.phoneE164}`} class="btn btn-outline" data-track="click_call">Call {business.phone}</a>
+      <a href="/contact/" class="link" data-track="click_quote">or use the quote form</a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .band { background: var(--color-accent); color: var(--color-accent-ink); padding: var(--space-16) 0; }
+  .inner { display: flex; align-items: center; justify-content: space-between; gap: var(--space-8); flex-wrap: wrap; }
+  h2 { margin-bottom: var(--space-2); }
+  p { margin: 0; font-size: var(--text-lg); }
+  .actions { display: flex; gap: var(--space-3); flex-wrap: wrap; align-items: center; }
+  .btn-white { background: #fff; color: var(--color-ink); }
+  .btn-white:hover { background: var(--color-surface); }
+  .link { color: #fff; font-weight: 600; }
+</style>

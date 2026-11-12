@@ -1,0 +1,162 @@
+---
+// One page per service, at the path set in business.ts (e.g. /tree-surgery/, /commercial/site-hoarding/).
+import { getCollection } from 'astro:content';
+import { Image } from 'astro:assets';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import BeforeAfter from '../components/BeforeAfter.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import FAQ from '../components/FAQ.astro';
+import Reviews from '../components/Reviews.astro';
+import QuoteBand from '../components/QuoteBand.astro';
+import { business, services, whatsappLink } from '../data/business';
+
+export function getStaticPaths() {
+  return services.map((s) => ({ params: { service: s.path.slice(1, -1) }, props: { service: s } }));
+}
+
+const { service } = Astro.props;
+const isCommercial = service.audience === 'commercial';
+
+const projects = (await getCollection('projects', (p) => !p.data.draft)).filter((p) => p.data.services.includes(service.slug));
+const showcase = projects.find((p) => p.data.pairs.length > 0);
+const others = projects.filter((p) => p !== showcase);
+const fallbackJob = (await getCollection('projects', (p) => !p.data.draft)).find((p) =>
+  p.data.services.some((s) => services.find((x) => x.slug === s)?.audience === service.audience),
+);
+const heroImage = showcase?.data.pairs[0].after ?? projects[0]?.data.gallery[0]?.src ?? fallbackJob?.data.gallery[0]?.src ?? fallbackJob?.data.pairs[0]?.after;
+const guides = (await getCollection('guides', (g) => !g.data.draft)).filter((g) => g.data.services.includes(service.slug));
+const siblings = services.filter((s) => s.audience === service.audience && s.slug !== service.slug);
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'Service',
+  serviceType: service.label,
+  name: `${service.title} in ${business.region}`,
+  description: service.intro,
+  provider: { '@id': `${business.url}/#business` },
+  areaServed: business.areasServed.map((name) => ({ '@type': 'City', name })),
+};
+---
+<BaseLayout title={`${service.title} in ${business.region}`} description={`${service.intro.split('. ')[0]}. ${business.name}, covering ${business.region}.`}>
+  <script type="application/ld+json" set:html={JSON.stringify(schema)} slot="head" />
+
+  <section class:list={['top', { dark: isCommercial }]}>
+    <div class="container top-inner">
+      <div class="top-text">
+        <nav class="crumbs" aria-label="Breadcrumb">
+          <a href="/">Home</a>
+          {isCommercial && <><span aria-hidden="true">/</span><a href="/commercial/">Construction sites</a></>}
+          <span aria-hidden="true">/</span>
+          <span>{service.label}</span>
+        </nav>
+        <h1>{service.title}</h1>
+        <p class="lede">{service.intro}</p>
+        <div class="actions">
+          <a href={whatsappLink(`Hi ${business.name}, I'd like a quote for ${service.label.toLowerCase()}.`)} class="btn btn-accent" data-track="click_whatsapp" rel="noopener">
+            {isCommercial ? 'WhatsApp us' : 'WhatsApp us a photo'}
+          </a>
+          <a href={`tel:${business.phoneE164}`} class="btn btn-outline" data-track="click_call">Call {business.phone}</a>
+        </div>
+      </div>
+      {heroImage && (
+        <div class="top-media">
+          <Image src={heroImage} alt={showcase ? `After: ${showcase.data.title}` : service.title} widths={[480, 800, 1200]} sizes="(min-width: 900px) 45vw, 100vw" loading="eager" />
+        </div>
+      )}
+    </div>
+  </section>
+
+  <section class="container includes">
+    <h2>What we do</h2>
+    <ul>{service.includes.map((i) => <li>{i}</li>)}</ul>
+  </section>
+
+  {showcase && (
+    <section class="container showcase">
+      <div class="showcase-head">
+        <h2>{showcase.data.title}</h2>
+        <a href={`/projects/${showcase.id}/`}>See the full job</a>
+      </div>
+      <p class="muted">{showcase.data.summary}</p>
+      <BeforeAfter before={showcase.data.pairs[0].before} after={showcase.data.pairs[0].after} focus={showcase.data.pairs[0].focus} label={showcase.data.title} sizes="(min-width: 1216px) 1216px, 100vw" class="showcase-ba" />
+    </section>
+  )}
+
+  {others.length > 0 && (
+    <section class="container more">
+      <h2>{showcase ? `More ${service.label.toLowerCase()} jobs` : `Recent ${service.label.toLowerCase()} jobs`}</h2>
+      <div class="grid">{others.slice(0, 6).map((p) => <ProjectCard project={p} />)}</div>
+      {others.length > 6 && <a href={`/projects/?service=${service.slug}`} class="btn btn-outline">See all {projects.length} jobs</a>}
+    </section>
+  )}
+
+  <Reviews service={service.slug} />
+
+  <section class="container info">
+    <FAQ faqs={service.faqs} />
+    <aside>
+      {guides.length > 0 && (
+        <div class="box">
+          <h2>Guides</h2>
+          <ul>{guides.map((g) => <li><a href={`/guides/${g.id}/`}>{g.data.title}</a></li>)}</ul>
+        </div>
+      )}
+      <div class="box">
+        <h2>{isCommercial ? 'Also on site' : 'Also for your garden'}</h2>
+        <ul>
+          {siblings.map((s) => <li><a href={s.path}>{s.title}</a></li>)}
+          {isCommercial && <li><a href="/commercial/">How we work with contractors</a></li>}
+        </ul>
+      </div>
+    </aside>
+  </section>
+
+  <QuoteBand
+    heading={isCommercial ? 'Send us the drawings' : 'Send us a photo of the job'}
+    text={isCommercial
+      ? 'Tree protection plan, method statement or a site photo: send what you have and we will price it.'
+      : "WhatsApp is quickest. Tell us your postcode and what you'd like doing."}
+    whatsappText={`Hi ${business.name}, I'd like a quote for ${service.label.toLowerCase()}.`}
+  />
+</BaseLayout>
+
+<style>
+  .top { background: var(--color-surface); }
+  .top.dark { background: var(--color-brand); color: #fff; }
+  .top-inner { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-12); align-items: center; padding: var(--space-12) 0; }
+  .crumbs { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-bottom: var(--space-6); font-size: var(--text-sm); color: var(--color-ink-muted); }
+  .dark .crumbs { color: var(--color-on-dark-muted); }
+  .crumbs a { font-weight: 600; }
+  .lede { font-size: var(--text-lg); line-height: 1.5; color: var(--color-ink-muted); max-width: 36rem; }
+  .dark .lede { color: var(--color-on-dark-muted); }
+  .actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-6); }
+  .top-media { aspect-ratio: 4 / 3; overflow: hidden; border-radius: var(--radius); }
+  .top-media :global(img) { width: 100%; height: 100%; object-fit: cover; }
+
+  .includes { padding: var(--space-16) 0 var(--space-8); }
+  .includes ul { list-style: none; margin: var(--space-6) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 0 var(--space-8); }
+  .includes li { position: relative; padding: var(--space-3) 0 var(--space-3) var(--space-6); border-top: 1px solid var(--color-border); font-weight: 600; }
+  .includes li::before { content: ''; position: absolute; left: 0; top: 1.15em; width: 10px; height: 10px; border-radius: 50%; background: var(--color-accent); }
+
+  .showcase { padding: var(--space-8) 0; }
+  .showcase-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-4); flex-wrap: wrap; }
+  .showcase-head h2 { margin: 0; }
+  .showcase-head a { font-weight: 700; }
+  .showcase :global(.showcase-ba) { aspect-ratio: 16 / 9; max-height: 80svh; width: 100%; border-radius: var(--radius); margin-top: var(--space-4); }
+
+  .more { padding: var(--space-8) 0 var(--space-12); }
+  .grid { display: grid; gap: var(--space-12) var(--space-6); grid-template-columns: repeat(3, 1fr); margin: var(--space-6) 0 var(--space-8); }
+
+  .info { display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-12); padding: var(--space-12) 0 var(--space-16); align-items: start; }
+  .box { background: var(--color-surface); border-radius: var(--radius); padding: var(--space-6); margin-bottom: var(--space-6); }
+  .box h2 { font-size: var(--text-xl); margin-bottom: var(--space-3); }
+  .box ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
+  .box a { font-weight: 600; }
+
+  @media (max-width: 899px) {
+    .top-inner, .info { grid-template-columns: 1fr; }
+    .grid { grid-template-columns: 1fr 1fr; }
+    .showcase :global(.showcase-ba) { aspect-ratio: 4 / 3; }
+  }
+  @media (max-width: 559px) { .grid { grid-template-columns: 1fr; } }
+</style>
