@@ -46,7 +46,7 @@ const commercial = services.filter((s) => s.audience === 'commercial');
       </div>
       <p class="areas">Working across {business.areasServed.slice(0, -1).join(', ')} and {business.areasServed.at(-1)}.</p>
     </div>
-    <p class="hero-caption">Drag to compare: <a href={`/projects/${hero.id}/`}>{hero.data.title.toLowerCase()}</a></p>
+    <p class="hero-caption"><a href={`/projects/${hero.id}/`}>{hero.data.title}</a></p>
   </section>
 
   <TrustStrip />
